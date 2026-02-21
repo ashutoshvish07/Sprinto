@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Task = require('../models/Task');
+const Log = require('../models/Log');
 const { asyncHandler, ApiError } = require('../middleware/errorHandler');
 
 // @desc    Get all users
@@ -87,4 +88,36 @@ const getUserStats = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getUsers, getUser, updateUser, deleteUser, getUserStats };
+// @desc    Admin creates a new user
+// @route   POST /api/users
+// @access  Private/Admin
+const createUser = asyncHandler(async (req, res) => {
+  const { name, email, password, role, color } = req.body;
+
+  if (!name || !email || !password) {
+    throw new ApiError('Name, email and password are required', 400);
+  }
+
+  const exists = await User.findOne({ email });
+  if (exists) throw new ApiError('Email already registered', 400);
+
+  const user = await User.create({
+    name,
+    email,
+    password,
+    role: role || 'user',
+    color: color || '#6366f1',
+    isEmailVerified: true,   // admin-created users skip email verification
+  });
+
+  await Log.create({
+    user: req.user._id,
+    action: `Created user account`,
+    target: user.name,
+    targetType: 'user',
+  });
+
+  res.status(201).json({ success: true, user });
+});
+
+module.exports = { getUsers, getUser, updateUser, deleteUser, getUserStats, createUser };

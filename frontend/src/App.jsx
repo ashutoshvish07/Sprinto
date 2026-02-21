@@ -11,6 +11,9 @@ import ProjectsPage from './pages/ProjectsPage'
 import TasksPage from './pages/TasksPage'
 import TeamPage from './pages/TeamPage'
 import LogsPage from './pages/LogsPage'
+import VerifyEmailPage from './pages/VerifyEmailPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 
 export default function App() {
   return (
@@ -18,7 +21,13 @@ export default function App() {
       <ToastProvider>
         <WSProvider>
           <Routes>
+            {/* Public auth routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+
+            {/* Protected app routes */}
             <Route
               path="/"
               element={

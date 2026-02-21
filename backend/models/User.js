@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema(
   {
@@ -31,51 +32,62 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: function () {
-        return this.name
-          .split(' ')
-          .map((n) => n[0])
-          .join('')
-          .toUpperCase()
-          .slice(0, 2);
+        return this.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
       },
     },
-    color: {
-      type: String,
-      default: '#6366f1',
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+    color: { type: String, default: '#6366f1' },
+    isActive: { type: Boolean, default: true },
+
+    // Feature 1: Refresh Tokens
+    refreshToken: { type: String, select: false },
+
+    // Feature 2: Email Verification
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerifyToken: { type: String, select: false },
+    emailVerifyExpire: { type: Date, select: false },
+
+    // Feature 3: Password Reset
+    passwordResetToken: { type: String, select: false },
+    passwordResetExpire: { type: Date, select: false },
   },
   { timestamps: true }
 );
 
-// Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
-  // Auto-generate avatar initials if not set
   if (!this.avatar || this.avatar === '') {
-    this.avatar = this.name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    this.avatar = this.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
   }
   next();
 });
 
-// Compare password method
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Return safe user object (no password)
+userSchema.methods.generateEmailVerifyToken = function () {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  this.emailVerifyToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+  this.emailVerifyExpire = Date.now() + 24 * 60 * 60 * 1000;
+  return rawToken;
+};
+
+userSchema.methods.generatePasswordResetToken = function () {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+  this.passwordResetExpire = Date.now() + 60 * 60 * 1000;
+  return rawToken;
+};
+
 userSchema.methods.toSafeObject = function () {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.refreshToken;
+  delete obj.emailVerifyToken;
+  delete obj.emailVerifyExpire;
+  delete obj.passwordResetToken;
+  delete obj.passwordResetExpire;
   return obj;
 };
 

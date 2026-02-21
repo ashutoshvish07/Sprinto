@@ -75,7 +75,7 @@ export default function Sidebar({ wsNotification }) {
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
         </div>
-        <span className="text-lg font-bold text-white tracking-tight">Nexus</span>
+        <span className="text-lg font-bold text-white tracking-tight">Sprinto</span>
         <div className="ml-auto flex items-center gap-1.5">
           <div className={`w-3.5 h-3.5 rounded-full ${connected ? 'bg-emerald-400' : 'bg-slate-600'}`} />
           <span className={`text-xs ${connected ? 'text-emerald-400' : 'text-slate-600'}`}>

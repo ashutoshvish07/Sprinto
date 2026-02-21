@@ -1,23 +1,27 @@
 import api from './client'
 
-// ─── Auth ────────────────────────────────────────────────────────────────────
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
   me: () => api.get('/auth/me'),
   updatePassword: (data) => api.put('/auth/password', data),
+  refresh: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
+  logout: () => api.post('/auth/logout'),
+  verifyEmail: (token) => api.get(`/auth/verify-email/${token}`),
+  resendVerification: (email) => api.post('/auth/resend-verification', { email }),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, password) => api.put(`/auth/reset-password/${token}`, { password }),
 }
 
-// ─── Users ───────────────────────────────────────────────────────────────────
 export const usersAPI = {
   getAll: () => api.get('/users'),
+  create: (data) => api.post('/users', data),  
   getOne: (id) => api.get(`/users/${id}`),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
   getStats: (id) => api.get(`/users/${id}/stats`),
 }
 
-// ─── Projects ────────────────────────────────────────────────────────────────
 export const projectsAPI = {
   getAll: () => api.get('/projects'),
   getOne: (id) => api.get(`/projects/${id}`),
@@ -28,7 +32,6 @@ export const projectsAPI = {
   removeMember: (id, userId) => api.delete(`/projects/${id}/members/${userId}`),
 }
 
-// ─── Tasks ───────────────────────────────────────────────────────────────────
 export const tasksAPI = {
   getAll: (params) => api.get('/tasks', { params }),
   getOne: (id) => api.get(`/tasks/${id}`),
@@ -38,7 +41,13 @@ export const tasksAPI = {
   getStats: () => api.get('/tasks/stats'),
 }
 
-// ─── Logs ────────────────────────────────────────────────────────────────────
 export const logsAPI = {
   getAll: (params) => api.get('/logs', { params }),
+}
+
+export const commentsAPI = {
+  getAll: (taskId) => api.get(`/comments/${taskId}`),
+  add: (taskId, text) => api.post(`/comments/${taskId}`, { text }),
+  edit: (commentId, text) => api.put(`/comments/${commentId}`, { text }),
+  delete: (commentId) => api.delete(`/comments/${commentId}`),
 }

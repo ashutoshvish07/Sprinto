@@ -6,11 +6,13 @@ const WebSocket = require('ws');
 const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const { generalLimiter } = require('./middleware/rateLimiter');
+const { errorHandler } = require('./middleware/errorHandler')
+
 const connectDB = require('./config/db');
 
 dotenv.config();
-console.log("MONGO_URI:", process.env.MONGO_URI);
-// Connect to MongoDB
 connectDB();
 
 const app = express();
@@ -18,22 +20,16 @@ const server = http.createServer(app);
 
 // ─── WebSocket Server ────────────────────────────────────────────────────────
 const wss = new WebSocket.Server({ server });
-
-// Store connected clients with their user info
 const clients = new Map();
 
-wss.on('connection', (ws, req) => {
-  console.log('New WebSocket connection');
-
+wss.on('connection', (ws) => {
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
-
-      // Client registers with userId
       if (data.type === 'register') {
         clients.set(ws, { userId: data.userId, userName: data.userName });
         console.log(`User ${data.userName} connected via WebSocket`);
-        ws.send(JSON.stringify({ type: 'registered', message: 'Connected to Nexus real-time server' }));
+        ws.send(JSON.stringify({ type: 'registered', message: 'Connected to Sprinto real-time server' }));
       }
     } catch (err) {
       console.error('WS message error:', err);
@@ -49,7 +45,6 @@ wss.on('connection', (ws, req) => {
   ws.on('error', (err) => console.error('WS error:', err));
 });
 
-// Broadcast to all connected clients except sender
 const broadcast = (data, excludeWs = null) => {
   const message = JSON.stringify(data);
   wss.clients.forEach((client) => {
@@ -59,12 +54,28 @@ const broadcast = (data, excludeWs = null) => {
   });
 };
 
-// Make broadcast available to routes via app locals
 app.locals.broadcast = broadcast;
 app.locals.wss = wss;
 app.locals.clients = clients;
 
-// ─── Middleware ──────────────────────────────────────────────────────────────
+// ─── Feature 5: Helmet Security Headers ──────────────────────────────────────
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", 'ws://localhost:5000', 'wss://localhost:5000'],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+    },
+  },
+}));
+
+// ─── Feature 4: General Rate Limiting ────────────────────────────────────────
+app.use('/api/', generalLimiter);
+
+// ─── Standard Middleware ──────────────────────────────────────────────────────
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
@@ -77,24 +88,25 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// ─── Routes ─────────────────────────────────────────────────────────────────
+// ─── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/projects', require('./routes/projects'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/logs', require('./routes/logs'));
+app.use('/api/comments', require('./routes/comments'));
+app.use(errorHandler)
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'Nexus API is running',
+    message: 'Sprinto API running',
     timestamp: new Date().toISOString(),
     wsClients: wss.clients.size,
   });
 });
 
-// ─── Error Handler ───────────────────────────────────────────────────────────
+// ─── Error Handler ────────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
@@ -103,16 +115,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 Handler
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// ─── Start ───────────────────────────────────────────────────────────────────
+// ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`\n🚀 Nexus server running on http://localhost:${PORT}`);
+  console.log(`\n🚀 Sprinto server running on http://localhost:${PORT}`);
   console.log(`⚡ WebSocket server ready`);
+  console.log(`🛡️  Helmet security headers active`);
+  console.log(`🚦 Rate limiting active`);
   console.log(`🌿 Environment: ${process.env.NODE_ENV}\n`);
 });
 

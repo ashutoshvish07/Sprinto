@@ -1,4 +1,4 @@
-# ⚡ Nexus — Multi-Role Project Management System
+# ⚡ Sprinto — Multi-Role Project Management System
 
 A full-stack Jira/Trello-like project management app built with React, Node.js, Express, MongoDB, and WebSockets.
 
@@ -39,7 +39,7 @@ npm install
 ```bash
 # backend/.env (already created, edit as needed)
 PORT=5000
-MONGO_URI=mongodb://localhost:27017/nexus
+MONGO_URI=mongodb://localhost:27017/sprinto
 JWT_SECRET=your_super_secret_jwt_key
 JWT_EXPIRE=7d
 CLIENT_URL=http://localhost:5173
@@ -55,10 +55,10 @@ npm run seed
 This creates demo users:
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@nexus.com | admin123 |
-| Manager | manager@nexus.com | manager123 |
-| User | sam@nexus.com | password123 |
-| User | morgan@nexus.com | password123 |
+| Admin | admin@sprinto.com | admin123 |
+| Manager | manager@sprinto.com | manager123 |
+| User | sam@sprinto.com | password123 |
+| User | morgan@sprinto.com | password123 |
 
 ### 4. Start Both Servers
 
@@ -79,7 +79,7 @@ Open http://localhost:5173
 ## 📁 Project Structure
 
 ```
-nexus/
+sprinto/
 ├── backend/
 │   ├── server.js              # Express + WebSocket server
 │   ├── config/

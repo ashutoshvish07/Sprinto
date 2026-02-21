@@ -23,13 +23,13 @@ const seed = async () => {
   await Log.deleteMany({});
 
   // Create users
-  const password = await bcrypt.hash('password123', 10);
+  const password = await bcrypt.hash('password@123', 10);
 
   const users = await User.insertMany([
-    { name: 'Alex Chen', email: 'admin@nexus.com', password: await bcrypt.hash('admin123', 10), role: 'admin', color: '#6366f1', avatar: 'AC' },
-    { name: 'Jordan Lee', email: 'manager@nexus.com', password: await bcrypt.hash('manager123', 10), role: 'manager', color: '#0ea5e9', avatar: 'JL' },
-    { name: 'Sam Rivera', email: 'sam@nexus.com', password: password, role: 'user', color: '#10b981', avatar: 'SR' },
-    { name: 'Morgan Davis', email: 'morgan@nexus.com', password: password, role: 'user', color: '#f59e0b', avatar: 'MD' },
+    { name: 'Ashu Vishwakarma', email: 'admin@sprinto.com', password: await bcrypt.hash('admin123', 10), role: 'admin', color: '#6366f1', avatar: 'AC' },
+    { name: 'Jaya ', email: 'manager@sprinto.com', password: await bcrypt.hash('manager123', 10), role: 'manager', color: '#0ea5e9', avatar: 'JL' },
+    { name: 'Sattu', email: 'sattu@sprinto.com', password: password, role: 'user', color: '#10b981', avatar: 'SR' },
+    { name: 'AK Singh', email: 'aksingh@sprinto.com', password: password, role: 'user', color: '#f59e0b', avatar: 'MD' },
   ]);
 
   const [admin, manager, sam, morgan] = users;
@@ -89,10 +89,10 @@ const seed = async () => {
 
   console.log('✅ Database seeded successfully!');
   console.log('\nDemo credentials:');
-  console.log('  Admin:   admin@nexus.com   / admin123');
-  console.log('  Manager: manager@nexus.com / manager123');
-  console.log('  User:    sam@nexus.com     / password123');
-  console.log('  User:    morgan@nexus.com  / password123\n');
+  console.log('  Admin:   admin@sprinto.com   / admin@123');
+  console.log('  Manager: manager@sprinto.com / manager@123');
+  console.log('  User:    sattu@sprinto.com     / password@123');
+  console.log('  User:    aksingh@sprinto.com  / password@123\n');
 
   process.exit(0);
 };

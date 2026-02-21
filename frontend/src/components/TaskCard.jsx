@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { Avatar, Badge, Button, ConfirmDialog } from './ui'
 import { priorityConfig, statusConfig, formatDate, isOverdue } from '../utils/helpers'
 import { useAuth } from '../context/AuthContext'
+import TaskDetailModal from './TaskDetailModal'
+
 
 export default function TaskCard({ task, onUpdate, onDelete, compact = false }) {
   const { user } = useAuth()
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
 
   const pc = priorityConfig[task.priority]
   const sc = statusConfig[task.status]
@@ -41,15 +44,14 @@ export default function TaskCard({ task, onUpdate, onDelete, compact = false }) 
           <div className="flex items-start gap-2 flex-1 min-w-0">
             <button
               onClick={handleStatusCycle}
-              className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors ${
-                task.status === 'done'
+              className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors ${task.status === 'done'
                   ? 'bg-emerald-500 border-emerald-500'
                   : task.status === 'in-progress'
-                  ? 'border-blue-400'
-                  : 'border-slate-500 hover:border-indigo-400'
-              }`}
+                    ? 'border-blue-400'
+                    : 'border-slate-500 hover:border-indigo-400'
+                }`}
             />
-            <p className={`text-sm font-medium leading-snug ${task.status === 'done' ? 'line-through text-slate-500' : 'text-white'}`}>
+            <p onClick={() => setShowDetail(true)} className={`text-sm font-medium cursor-pointer leading-snug ${task.status === 'done' ? 'line-through text-slate-500' : 'text-white'}`}>
               {task.title}
             </p>
           </div>
@@ -102,6 +104,14 @@ export default function TaskCard({ task, onUpdate, onDelete, compact = false }) 
           onConfirm={() => { onDelete(task._id); setShowConfirm(false) }}
           onCancel={() => setShowConfirm(false)}
           danger
+        />
+      )}
+      {showDetail && (
+        <TaskDetailModal
+          task={task}
+          onClose={() => setShowDetail(false)}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
         />
       )}
     </>

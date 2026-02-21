@@ -53,6 +53,97 @@ function EditUserModal({ user, onClose, onSave, currentUser }) {
   )
 }
 
+function CreateUserModal({ onClose, onCreate }) {
+  const COLORS = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4', '#ec4899']
+  const [form, setForm] = useState({
+    name: '', email: '', password: '', role: 'user', color: '#6366f1'
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleCreate = async () => {
+    if (!form.name || !form.email || !form.password) {
+      setError('All fields are required')
+      return
+    }
+    if (form.password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      await onCreate(form)
+      onClose()
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create user')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal title="Create New User" onClose={onClose}>
+      <div className="space-y-4">
+        <Input
+          label="Full Name *"
+          value={form.name}
+          onChange={(e) => set('name', e.target.value)}
+          placeholder="Alex Chen"
+        />
+        <Input
+          label="Email *"
+          type="email"
+          value={form.email}
+          onChange={(e) => set('email', e.target.value)}
+          placeholder="alex@example.com"
+        />
+        <Input
+          label="Password *"
+          type="password"
+          value={form.password}
+          onChange={(e) => set('password', e.target.value)}
+          placeholder="Min 6 characters"
+        />
+        <Select
+          label="Role"
+          value={form.role}
+          onChange={(e) => set('role', e.target.value)}
+        >
+          <option value="user">User</option>
+          <option value="manager">Manager</option>
+        </Select>
+        <div>
+          <label className="block text-xs text-slate-400 mb-2 uppercase tracking-wider">
+            Avatar Color
+          </label>
+          <div className="flex gap-2 flex-wrap">
+            {COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => set('color', c)}
+                className={`w-7 h-7 rounded-full transition-transform ${form.color === c
+                  ? 'scale-125 ring-2 ring-white ring-offset-2 ring-offset-slate-900'
+                  : 'hover:scale-110'
+                  }`}
+                style={{ background: c }}
+              />
+            ))}
+          </div>
+        </div>
+        {error && <p className="text-red-400 text-sm">{error}</p>}
+        <div className="flex gap-3 pt-2">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button onClick={handleCreate} loading={loading} className="flex-1">
+            Create User
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 export default function TeamPage() {
   const { user } = useAuth()
   const toast = useToast()
@@ -61,6 +152,7 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true)
   const [editUser, setEditUser] = useState(null)
   const [deleteUser, setDeleteUser] = useState(null)
+  const [showCreate, setShowCreate] = useState(false)
 
   const load = async () => {
     try {
@@ -95,13 +187,30 @@ export default function TeamPage() {
     setDeleteUser(null)
   }
 
+  const handleCreate = async (data) => {
+    const res = await usersAPI.create(data)
+    setUsers((u) => [...u, res.data.user])
+    toast.success(`${data.name} added to the workspace`)
+  }
+
   if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Team</h1>
-        <p className="text-slate-400 text-sm mt-0.5">{users.length} members</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Team</h1>
+          <p className="text-slate-400 text-sm mt-0.5">{users.length} members</p>
+        </div>
+        {user.role === 'admin' && (
+          <Button onClick={() => setShowCreate(true)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-4 h-4">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add User
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -191,6 +300,13 @@ export default function TeamPage() {
           onConfirm={() => handleDelete(deleteUser._id)}
           onCancel={() => setDeleteUser(null)}
           danger
+        />
+      )}
+
+      {showCreate && (
+        <CreateUserModal
+          onClose={() => setShowCreate(false)}
+          onCreate={handleCreate}
         />
       )}
     </div>
