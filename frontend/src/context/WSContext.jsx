@@ -16,8 +16,8 @@ export const WSProvider = ({ children }) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//localhost:5000`
-    // const wsUrl = `${protocol}//${window.location.host}`
+    // const wsUrl = `${protocol}//localhost:5000`
+    const wsUrl = `${protocol}//${window.location.host}`
 
     try {
       const ws = new WebSocket(wsUrl)
