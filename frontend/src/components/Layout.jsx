@@ -9,11 +9,12 @@ export default function Layout() {
 
   useEffect(() => {
     return subscribe('layout-ws', (msg) => {
+      console.log(msg)
       const notifMap = {
-        task_created: `⚡ ${msg.payload.user} created a task in ${msg.payload.projectName || 'a project'}`,
-        task_updated: `↻ ${msg.payload.user} updated "${msg.payload.task?.title || 'a task'}"`,
-        task_deleted: `✕ ${msg.payload.user} deleted "${msg.payload.taskTitle}"`,
-        project_created: `◈ ${msg.payload.user} created project "${msg.payload.project?.name}"`,
+        task_created: `⚡ ${msg.payload?.user} created a task in ${msg.payload?.projectName || 'a project'}`,
+        task_updated: `↻ ${msg.payload?.user} updated "${msg.payload?.task?.title || 'a task'}"`,
+        task_deleted: `✕ ${msg.payload?.user} deleted "${msg.payload?.taskTitle}"`,
+        project_created: `◈ ${msg.payload?.user} created project "${msg.payload?.project?.name}"`,
       }
       const notif = notifMap[msg.type]
       if (notif) {

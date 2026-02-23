@@ -123,8 +123,11 @@ const tasksSlice = createSlice({
 
       // Create task
       .addCase(createTask.fulfilled, (state, action) => {
-        state.items.unshift(action.payload)
-        if (state.stats) state.stats.total = (state.stats.total || 0) + 1
+        const exists = state.items.find((t) => t._id === action.payload._id)
+        if (!exists) {
+          state.items.unshift(action.payload)
+          if (state.stats) state.stats.total = (state.stats.total || 0) + 1
+        }
       })
 
       // Update task

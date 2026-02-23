@@ -8,9 +8,8 @@ const morgan = require('morgan');
 const dotenv = require('dotenv');
 const helmet = require('helmet');
 const { generalLimiter } = require('./middleware/rateLimiter');
-const { errorHandler } = require('./middleware/errorHandler')
-
 const connectDB = require('./config/db');
+const { startReminderCron } = require('./jobs/reminderJob');
 
 dotenv.config();
 connectDB();
@@ -29,7 +28,7 @@ wss.on('connection', (ws) => {
       if (data.type === 'register') {
         clients.set(ws, { userId: data.userId, userName: data.userName });
         console.log(`User ${data.userName} connected via WebSocket`);
-        ws.send(JSON.stringify({ type: 'registered', message: 'Connected to Sprinto real-time server' }));
+        ws.send(JSON.stringify({ type: 'registered', message: 'Connected to Nexus real-time server' }));
       }
     } catch (err) {
       console.error('WS message error:', err);
@@ -95,12 +94,11 @@ app.use('/api/projects', require('./routes/projects'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/comments', require('./routes/comments'));
-app.use(errorHandler)
 
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'Sprinto API running',
+    message: 'Nexus API running',
     timestamp: new Date().toISOString(),
     wsClients: wss.clients.size,
   });
@@ -127,6 +125,9 @@ server.listen(PORT, () => {
   console.log(`🛡️  Helmet security headers active`);
   console.log(`🚦 Rate limiting active`);
   console.log(`🌿 Environment: ${process.env.NODE_ENV}\n`);
+
+  // Start cron jobs after DB is connected and server is up
+  startReminderCron();
 });
 
 module.exports = { app, broadcast };

@@ -7,12 +7,14 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://sprinto-production.up.railway.app/',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:5000',
+        target: 'wss:https://sprinto-production.up.railway.app/',
         ws: true,
+        changeOrigin:true,
+        secure:true,
       },
     },
   },

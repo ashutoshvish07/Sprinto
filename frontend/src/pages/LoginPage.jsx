@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext'
 import { Button, Input } from '../components/ui'
 
 const DEMO_ACCOUNTS = [
-  { role: 'Admin', email: 'admin@sprinto.com', password: 'admin123', color: '#6366f1' },
+  { role: 'Admin', email: 'ashuvish79@gmail.com', password: 'admin123', color: '#6366f1' },
   { role: 'Manager', email: 'manager@sprinto.com', password: 'manager123', color: '#0ea5e9' },
   { role: 'User', email: 'sam@sprinto.com', password: 'password123', color: '#10b981' },
 ]
@@ -15,7 +15,7 @@ export default function LoginPage() {
   const toast = useToast()
   const navigate = useNavigate()
 
-  const [email, setEmail] = useState('admin@sprinto.com')
+  const [email, setEmail] = useState('ashuvish79@gmail.com')
   const [password, setPassword] = useState('admin123')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
