@@ -63,7 +63,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      connectSrc: ["'self'", 'ws://localhost:5000', 'wss://localhost:5000'],
+      connectSrc: ["'self'", 'ws://localhost:5000', 'wss://localhost:5000',
+        'wss://sprinto-production.up.railway.app',
+        'ws://sprinto-production.up.railway.app',
+        // API calls from Vercel frontend
+        'https://sprinto-production.up.railway.app',
+      ],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'blob:'],
