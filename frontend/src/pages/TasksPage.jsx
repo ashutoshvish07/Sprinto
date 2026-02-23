@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
-import { tasksAPI, projectsAPI, usersAPI } from '../api/services'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchTasks, createTask, updateTask, deleteTask, selectTasks, selectTasksLoading, wsTaskUpdated, wsTaskCreated, wsTaskDeleted } from '../store/slices/tasksSlice'
+import { fetchProjects, selectProjects, selectProjectsLastFetched, PROJECTS_CACHE_TTL } from '../store/slices/projectsSlice'
+import { fetchUsers, selectUsers, selectUsersLastFetched, USERS_CACHE_TTL } from '../store/slices/usersSlice'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { useWS } from '../context/WSContext'
@@ -11,74 +14,68 @@ export default function TasksPage() {
   const { user } = useAuth()
   const toast = useToast()
   const { subscribe } = useWS()
+  const dispatch = useDispatch()
 
-  const [tasks, setTasks] = useState([])
-  const [projects, setProjects] = useState([])
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
+  const tasks = useSelector(selectTasks)
+  const projects = useSelector(selectProjects)
+  const users = useSelector(selectUsers)
+  const loading = useSelector(selectTasksLoading)
+  const projectsLastFetched = useSelector(selectProjectsLastFetched)
+  const usersLastFetched = useSelector(selectUsersLastFetched)
+
   const [showForm, setShowForm] = useState(false)
-
   const [filters, setFilters] = useState({
     status: '', priority: '', project: '',
     assignee: user.role === 'user' ? user._id : '',
     search: '',
   })
-
   const canCreate = user.role !== 'user'
 
-  const load = async () => {
-    try {
-      const params = {}
-      if (filters.status) params.status = filters.status
-      if (filters.priority) params.priority = filters.priority
-      if (filters.project) params.project = filters.project
-      if (filters.assignee) params.assignee = filters.assignee
-      if (filters.search) params.search = filters.search
+  useEffect(() => {
+    const now = Date.now()
+    if (!projectsLastFetched || now - projectsLastFetched > PROJECTS_CACHE_TTL) dispatch(fetchProjects())
+    if (!usersLastFetched || now - usersLastFetched > USERS_CACHE_TTL) dispatch(fetchUsers())
+  }, [])
 
-      const [taskRes, projRes, userRes] = await Promise.all([
-        tasksAPI.getAll(params),
-        projectsAPI.getAll(),
-        usersAPI.getAll(),
-      ])
-      setTasks(taskRes.data.tasks)
-      setProjects(projRes.data.projects)
-      setUsers(userRes.data.users)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
+  // Fetch tasks when filters change
+  useEffect(() => {
+    const params = {}
+    if (filters.status) params.status = filters.status
+    if (filters.priority) params.priority = filters.priority
+    if (filters.project) params.project = filters.project
+    if (filters.assignee) params.assignee = filters.assignee
+    if (filters.search) params.search = filters.search
+    dispatch(fetchTasks(params))
+  }, [filters])
+
+  // WS — patch store directly
+  useEffect(() => {
+    return subscribe('tasks-page', (msg) => {
+      if (msg.type === 'task_updated') dispatch(wsTaskUpdated(msg.payload.task))
+      if (msg.type === 'task_created') dispatch(wsTaskCreated(msg.payload.task))
+      if (msg.type === 'task_deleted') dispatch(wsTaskDeleted(msg.payload.taskId))
+    })
+  }, [subscribe, dispatch])
+
+  const handleCreate = async (data) => {
+    const result = await dispatch(createTask(data))
+    if (createTask.fulfilled.match(result)) {
+      toast.success('Task created!')
+      setShowForm(false)
     }
   }
 
-  useEffect(() => { load() }, [filters])
-
-  useEffect(() => {
-    return subscribe('tasks-page', (msg) => {
-      if (['task_created', 'task_updated', 'task_deleted'].includes(msg.type)) load()
-    })
-  }, [subscribe, filters])
-
-  const handleCreate = async (data) => {
-    const res = await tasksAPI.create(data)
-    setTasks((t) => [res.data.task, ...t])
-    toast.success('Task created!')
-    setShowForm(false)
-  }
-
   const handleUpdate = async (id, data) => {
-    const res = await tasksAPI.update(id, data)
-    setTasks((t) => t.map((task) => task._id === id ? res.data.task : task))
-    toast.success('Task updated')
+    const result = await dispatch(updateTask({ id, data }))
+    if (updateTask.fulfilled.match(result)) toast.success('Task updated')
   }
 
   const handleDelete = async (id) => {
-    await tasksAPI.delete(id)
-    setTasks((t) => t.filter((task) => task._id !== id))
+    await dispatch(deleteTask(id))
     toast.success('Task deleted')
   }
 
   const setFilter = (k, v) => setFilters((f) => ({ ...f, [k]: v }))
-
   const grouped = {
     'todo': tasks.filter((t) => t.status === 'todo'),
     'in-progress': tasks.filter((t) => t.status === 'in-progress'),
@@ -102,7 +99,6 @@ export default function TasksPage() {
         )}
       </div>
 
-      {/* Filters */}
       <Card className="p-4">
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-48">
@@ -144,14 +140,11 @@ export default function TasksPage() {
         </div>
       </Card>
 
-      {loading ? (
+      {loading && tasks.length === 0 ? (
         <div className="flex justify-center py-20"><Spinner size="lg" /></div>
       ) : tasks.length === 0 ? (
-        <EmptyState
-          title="No tasks found"
-          description="Try adjusting your filters, or create a new task."
-          action={canCreate && <Button onClick={() => setShowForm(true)}>Create Task</Button>}
-        />
+        <EmptyState title="No tasks found" description="Try adjusting your filters, or create a new task."
+          action={canCreate && <Button onClick={() => setShowForm(true)}>Create Task</Button>} />
       ) : (
         <div className="space-y-6">
           {Object.entries(grouped).map(([status, items]) => {
@@ -175,12 +168,7 @@ export default function TasksPage() {
       )}
 
       {showForm && (
-        <TaskForm
-          onClose={() => setShowForm(false)}
-          onCreate={handleCreate}
-          projects={projects}
-          users={users}
-        />
+        <TaskForm onClose={() => setShowForm(false)} onCreate={handleCreate} projects={projects} users={users} />
       )}
     </div>
   )

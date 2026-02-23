@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { tasksAPI, projectsAPI, logsAPI } from '../api/services'
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { fetchTasks, fetchTaskStats, selectTaskStats, selectTasksLoading, selectTasksLastFetched, CACHE_TTL } from '../store/slices/tasksSlice'
+import { fetchProjects, selectProjects, selectProjectsLastFetched, PROJECTS_CACHE_TTL } from '../store/slices/projectsSlice'
+import { fetchLogs, selectLogs, selectLogsLastFetched, LOGS_CACHE_TTL } from '../store/slices/logsSlice'
 import { useAuth } from '../context/AuthContext'
 import { useWS } from '../context/WSContext'
 import { Card, Avatar, Badge, Spinner } from '../components/ui'
-import { timeAgo, statusConfig, priorityConfig, roleConfig } from '../utils/helpers'
+import { timeAgo, statusConfig, priorityConfig } from '../utils/helpers'
 
 function StatCard({ label, value, sub, color, icon }) {
   return (
@@ -25,41 +28,49 @@ function StatCard({ label, value, sub, color, icon }) {
 export default function DashboardPage() {
   const { user } = useAuth()
   const { subscribe } = useWS()
-  const [stats, setStats] = useState(null)
-  const [projects, setProjects] = useState([])
-  const [logs, setLogs] = useState([])
-  const [myTasks, setMyTasks] = useState([])
-  const [loading, setLoading] = useState(true)
+  const dispatch = useDispatch()
 
-  const load = async () => {
-    try {
-      const [statsRes, projectsRes, logsRes, myTasksRes] = await Promise.all([
-        tasksAPI.getStats(),
-        projectsAPI.getAll(),
-        logsAPI.getAll({ limit: 8 }),
-        tasksAPI.getAll({ assignee: user._id }),
-      ])
-      setStats(statsRes.data.stats)
-      setProjects(projectsRes.data.projects)
-      setLogs(logsRes.data.logs)
-      setMyTasks(myTasksRes.data.tasks)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
+  const stats = useSelector(selectTaskStats)
+  const projects = useSelector(selectProjects)
+  const logs = useSelector(selectLogs)
+  const tasksLoading = useSelector(selectTasksLoading)
+  const tasksLastFetched = useSelector(selectTasksLastFetched)
+  const projectsLastFetched = useSelector(selectProjectsLastFetched)
+  const logsLastFetched = useSelector(selectLogsLastFetched)
+
+  // All tasks assigned to me (from store, filter client-side)
+  const allTasks = useSelector((s) => s.tasks.items)
+  const myTasks = allTasks.filter((t) => t.assignee?._id === user._id)
+
+  const loadAll = (force = false) => {
+    const now = Date.now()
+    if (force || !projectsLastFetched || now - projectsLastFetched > PROJECTS_CACHE_TTL) {
+      dispatch(fetchProjects())
+    }
+    if (force || !logsLastFetched || now - logsLastFetched > LOGS_CACHE_TTL) {
+      dispatch(fetchLogs({ limit: 8 }))
+    }
+    if (force || !tasksLastFetched || now - tasksLastFetched > CACHE_TTL) {
+      dispatch(fetchTaskStats())
+      dispatch(fetchTasks({}))
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { loadAll() }, [])
 
-  // Refresh on WS events
+  // Refresh on WS events — only invalidate, don't refetch everything
   useEffect(() => {
     return subscribe('dashboard', (msg) => {
-      if (['task_created', 'task_updated', 'task_deleted', 'project_created'].includes(msg.type)) {
-        load()
+      if (['task_created', 'task_updated', 'task_deleted'].includes(msg.type)) {
+        dispatch(fetchTaskStats())
+      }
+      if (['project_created', 'project_updated', 'project_deleted'].includes(msg.type)) {
+        dispatch(fetchProjects())
       }
     })
-  }, [subscribe])
+  }, [subscribe, dispatch])
+
+  const loading = tasksLoading && !stats
 
   if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>
 
@@ -80,7 +91,6 @@ export default function DashboardPage() {
         <p className="text-slate-400 mt-1 text-sm">Here's an overview of your workspace.</p>
       </div>
 
-      {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <StatCard label="Total Tasks" value={stats.total} color="#6366f1" icon="✦" sub={`${stats.done} done`} />
@@ -93,7 +103,6 @@ export default function DashboardPage() {
       )}
 
       <div className="grid lg:grid-cols-5 gap-6">
-        {/* Project progress chart */}
         <Card className="lg:col-span-3 p-6">
           <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-6">Tasks by Project</h2>
           {chartData.length > 0 ? (
@@ -101,10 +110,7 @@ export default function DashboardPage() {
               <BarChart data={chartData} barSize={12} barGap={4}>
                 <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, color: '#fff', fontSize: 12 }}
-                  cursor={{ fill: 'rgba(99,102,241,0.05)' }}
-                />
+                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, color: '#fff', fontSize: 12 }} cursor={{ fill: 'rgba(99,102,241,0.05)' }} />
                 <Bar dataKey="done" name="Done" fill="#10b981" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="inProgress" name="In Progress" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="todo" name="Todo" fill="#475569" radius={[4, 4, 0, 0]} />
@@ -115,7 +121,6 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        {/* Activity feed */}
         <Card className="lg:col-span-2 p-6">
           <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-5">Recent Activity</h2>
           <div className="space-y-4">
@@ -137,7 +142,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Project progress bars */}
       <Card className="p-6">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-6">Project Progress</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -164,7 +168,6 @@ export default function DashboardPage() {
         </div>
       </Card>
 
-      {/* My tasks */}
       {myTasks.length > 0 && (
         <Card className="p-6">
           <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-5">My Tasks</h2>
