@@ -11,6 +11,7 @@ import ProjectsPage from './pages/ProjectsPage'
 import TasksPage from './pages/TasksPage'
 import TeamPage from './pages/TeamPage'
 import LogsPage from './pages/LogsPage'
+import TaskDetailPage from './pages/TaskDetailPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="board" element={<BoardPage />} />
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="tasks" element={<TasksPage />} />
+              <Route path="tasks/:id" element={<TaskDetailPage />} />
               <Route
                 path="team"
                 element={

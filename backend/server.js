@@ -100,6 +100,7 @@ app.use('/api/projects', require('./routes/projects'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/comments', require('./routes/comments'));
+app.use('/api/search', require('./routes/search'));
 
 app.get('/api/health', (req, res) => {
   res.json({

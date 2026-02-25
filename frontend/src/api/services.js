@@ -51,3 +51,7 @@ export const commentsAPI = {
   edit: (commentId, text) => api.put(`/comments/${commentId}`, { text }),
   delete: (commentId) => api.delete(`/comments/${commentId}`),
 }
+
+export const searchAPI = {
+  search: (q) => api.get('/search', { params: { q } }),
+}

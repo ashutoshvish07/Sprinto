@@ -12,6 +12,7 @@ frontend/.env
 
 # logs
 *.log
+.vercel
 
 # build
 dist/
