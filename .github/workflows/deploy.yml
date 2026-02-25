@@ -80,7 +80,7 @@ jobs:
 
       - name: Deploy to Railway
         working-directory: backend
-        run: npx @railway/cli up --service sprinto-backend
+        run: npx @railway/cli up --service Sprinto
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
