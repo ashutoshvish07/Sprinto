@@ -202,6 +202,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   const resetUrl = `${process.env.CLIENT_URL}/reset-password/${rawToken}`;
+  //  const resetUrl = `https://sprinto-bay.vercel.app/api/reset-password/${rawToken}`;
 
   try {
     await sendPasswordResetEmail(user, resetUrl);

@@ -44,6 +44,7 @@ export const roleConfig = {
   user: { label: 'Member', badgeClass: 'bg-slate-700 text-slate-300' },
 }
 
+
 export const PROJECT_COLORS = [
   '#6366f1', '#0ea5e9', '#10b981', '#f59e0b',
   '#f43f5e', '#8b5cf6', '#06b6d4', '#ec4899',

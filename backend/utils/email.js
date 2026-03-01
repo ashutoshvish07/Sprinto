@@ -82,7 +82,7 @@ const sendVerificationEmail = async (user, verifyUrl) => {
     subject: '✅ Verify your Sprinto account',
     html: emailWrapper(`
       <h2 class="title">Verify your email address</h2>
-      <p class="text">Hey ${user.name}, welcome to Sprinto! Click below to verify your email.</p>
+      <p class="subtitle">Hey ${user.name}, welcome to Sprinto! Click below to verify your email.</p>
       <a href="${verifyUrl}" class="btn">Verify Email Address</a>
       <div class="expire">⏰ This link expires in <strong>24 hours</strong>.</div>
     `),
@@ -95,9 +95,9 @@ const sendPasswordResetEmail = async (user, resetUrl) => {
     subject: '🔐 Reset your Sprinto password',
     html: emailWrapper(`
       <h2 class="title">Reset your password</h2>
-      <p class="text">Hey ${user.name}, click below to set a new password.</p>
+      <p class="subtitle">Hey ${user.name}, click below to set a new password.</p>
       <a href="${resetUrl}" class="btn">Reset Password</a>
-      <div class="expire">⏰ This link expires in <strong>1 hour</strong>.</div>
+      <div class="subtitle">⏰ This link expires in <strong>1 hour</strong>.</div>
     `),
   })
 }
